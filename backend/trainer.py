@@ -21,7 +21,6 @@ class Trainer():
         self.instance_data_dir = instance_data_dir
         self.class_data_dir = class_data_dir
         self.class_prompt = class_prompt
-        os.makedirs(self.prefix, exist_ok=True)
         os.makedirs(f"{self.prefix}/weights", exist_ok=True)
 
     def train(self):

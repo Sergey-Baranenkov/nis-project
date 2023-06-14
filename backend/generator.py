@@ -7,7 +7,17 @@ import os
 from lalala import StableDiffusionControlNetInpaintImg2ImgPipeline
 from PIL import Image, ImageDraw
 
+prompts = [
+'($:1.4)++ (pen drawing)++ black and white, midjourney style digital art',
+'avatar of ($:1.4)++ astronaut, midjourney style hyperrealism, dark galaxy space background',
+'($:1.4)++ in style (starry night by Van Gogh)++, dark blue sky and white yellow strokes swirls stars, \
+midjourney style, 4k, painting intricate details',
+'avatar of ($:1.4)++ pokemon, midjourney style hyperrealism, city background',
+'magical ($:1.4) midjourney style hyperrealism Cyberpunk+, city background\
+          greg rutkowski, digital art rainbow background happy, peace sign'
+]
 
+negative_prompt = "out of frame, duplicate, watermark, signature, text, ugly, blurry, deformed"
 
 controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-canny", torch_dtype=torch.float16).to("cuda")
 img2img_pipe = StableDiffusionControlNetInpaintImg2ImgPipeline.from_pretrained("parlance/dreamlike-diffusion-1.0-inpainting",
@@ -33,7 +43,10 @@ class Generator():
         g_cuda.manual_seed(seed)
         return g_cuda
 
-    def generate(self, prompt, negative_prompt):
+    def generate(self, prompt_num=1):
+        prompt = prompts[prompt_num - 1]
+        prompt.replace('$', self.id)
+
         merged_pipe = img2img_pipe.merge(["parlance/dreamlike-diffusion-1.0-inpainting",
                                           self.diffusion_weights_prefix,
                                           "runwayml/stable-diffusion-v1-5"],
@@ -43,7 +56,7 @@ class Generator():
         merged_pipe.safety_checker = lambda images, clip_input: (images, False)
         merged_pipe.to("cuda")
 
-        self.transform_images(merged_pipe, prompt, negative_prompt)
+        self.transform_images(merged_pipe, prompt)
         os.remove(f"{self.output_images_path}/1000.png")
         self.prettify_gfpgan()
 
@@ -52,7 +65,7 @@ class Generator():
             python inference_gfpgan.py -i "{self.output_images_path}" -o "{self.output_images_path}" -v 1.3 -s 2 --bg_upsampler realesrgan
         """)
 
-    def transform_images(self, merged_pipe, prompt, negative_prompt):
+    def transform_images(self, merged_pipe, prompt):
         data_dir = self.input_images_path
         save_dir = self.output_images_path
 
